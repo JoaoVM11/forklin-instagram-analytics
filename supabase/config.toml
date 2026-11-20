@@ -1,0 +1,15 @@
+project_id = "goxwnxfgusvxvqyijcyo"
+
+# As funções fazem a própria autenticação (senha do app -> sessão HMAC),
+# então a verificação de JWT do Supabase fica desligada.
+[functions.fia-auth]
+verify_jwt = false
+
+[functions.fia-token]
+verify_jwt = false
+
+[functions.fia-api]
+verify_jwt = false
+
+[functions.fia-sync]
+verify_jwt = false
