@@ -42,7 +42,7 @@ a { color: var(--forklin-blue-bright); }
 button { font-family: inherit; }
 
 /* Layout */
-.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100%; }
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
 .sidebar {
   background: var(--forklin-navy);
   color: #fff;
@@ -67,7 +67,7 @@ button { font-family: inherit; }
 .sidebar .foot .sync:hover { background: rgba(255,255,255,.08); }
 .sidebar .foot .sync:disabled { opacity: .6; }
 
-.main { padding: 28px 36px 60px; max-width: 1280px; width: 100%; }
+.main { padding: 28px 36px 60px; max-width: 1280px; width: 100%; min-width: 0; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .page-head h1 { margin: 0; font-size: 24px; font-weight: 700; }
 .page-head p { margin: 4px 0 0; color: var(--forklin-muted); }
@@ -90,7 +90,7 @@ input.field:focus, textarea.field:focus { outline: 2px solid var(--forklin-blue-
 
 /* Cards */
 .grid { display: grid; gap: 16px; }
-.kpis { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .two { grid-template-columns: 1fr 1fr; }
 @media (max-width: 1000px) { .two { grid-template-columns: 1fr; } .shell { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; } }
 .card { background: #fff; border: 1px solid var(--forklin-line); border-radius: var(--radius); padding: 18px 20px; }
