@@ -42,32 +42,36 @@ a { color: var(--forklin-blue-bright); }
 button { font-family: inherit; }
 
 /* Layout */
-.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
+.shell { display: grid; grid-template-columns: clamp(196px, 17vw, 240px) minmax(0, 1fr); min-height: 100%; }
 .sidebar {
   background: var(--forklin-navy);
   color: #fff;
-  padding: 24px 16px;
+  padding: clamp(14px, 3vh, 24px) clamp(10px, 1.2vw, 16px);
   display: flex; flex-direction: column; gap: 4px;
-  position: sticky; top: 0; height: 100vh;
+  position: sticky; top: 0;
+  height: 100vh; height: 100dvh;           /* acompanha a altura real da janela (zoom, barra do navegador) */
+  overflow-y: auto; overscroll-behavior: contain;  /* se não couber, o menu rola em vez de esconder itens */
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.25) transparent;
 }
-.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 24px; }
+.sidebar > * { flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px clamp(10px, 3vh, 24px); }
 .brand img.sym { width: 34px; height: 34px; }
 .brand img.name { height: 22px; }
 .brand small { display: block; font-size: 11px; color: var(--forklin-sky); letter-spacing: .04em; margin-top: 4px; }
 .nav a {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 8px;
+  padding: clamp(6px, 1.3vh, 10px) 12px; border-radius: 8px;
   color: #dbe6f6; text-decoration: none; font-weight: 500;
 }
 .nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
 .nav a.active { background: var(--forklin-nav-active); color: #fff; }
-.sidebar .foot { margin-top: auto; font-size: 12px; color: #a9bddb; padding: 8px; }
+.sidebar .foot { margin-top: auto; font-size: 12px; color: #a9bddb; padding: 8px; padding-top: 12px; }
 .sidebar .foot .link { background: none; border: 0; color: #fff; text-decoration: underline; cursor: pointer; padding: 0; font-size: 12px; }
 .sidebar .foot .sync { width: 100%; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; padding: 9px 12px; font-weight: 600; cursor: pointer; }
 .sidebar .foot .sync:hover { background: rgba(255,255,255,.08); }
 .sidebar .foot .sync:disabled { opacity: .6; }
 
-.main { padding: 28px 36px 60px; max-width: 1280px; width: 100%; min-width: 0; }
+.main { padding: clamp(16px, 3vh, 28px) clamp(14px, 2.6vw, 36px) 60px; max-width: 1280px; width: 100%; min-width: 0; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .page-head h1 { margin: 0; font-size: 24px; font-weight: 700; }
 .page-head p { margin: 4px 0 0; color: var(--forklin-muted); }
@@ -150,12 +154,19 @@ tr:hover td { background: #F3F6FA; }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
 label > .field { margin-top: 4px; }
 
-/* ---------- Mobile ---------- */
-@media (max-width: 900px) {
+/* Janelas baixas no desktop (zoom alto): menu compacto */
+@media (max-height: 640px) and (min-width: 901px) {
+  .brand small { display: none; }
+  .sidebar .foot > div > div { display: none; }
+  .sidebar .foot { padding-top: 8px; }
+}
+
+/* ---------- Mobile, tablet e janelas muito baixas (zoom muito alto) ---------- */
+@media (max-width: 900px), (max-height: 480px) {
   body { font-size: 13px; }
   .shell { grid-template-columns: minmax(0, 1fr); }
   .sidebar {
-    position: sticky; top: 0; z-index: 10; height: auto;
+    position: sticky; top: 0; z-index: 10; height: auto; overflow: visible;
     padding: 10px 12px 0; gap: 0;
     display: grid; grid-template-columns: 1fr auto; grid-template-areas: "brand foot" "nav nav"; align-items: center;
   }
@@ -188,4 +199,14 @@ label > .field { margin-top: 4px; }
   .cap { max-width: 180px; }
   th, td { padding: 8px 6px; }
   .insight { gap: 10px; }
+}
+
+/* Altura muito pequena: a barra superior deixa de ser fixa para não cobrir o conteúdo */
+@media (max-height: 420px) {
+  .sidebar { position: static; }
+}
+/* Indica que há mais abas para o lado */
+@media (max-width: 900px), (max-height: 480px) {
+  .nav { mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .nav.at-end { mask-image: none; -webkit-mask-image: none; }
 }

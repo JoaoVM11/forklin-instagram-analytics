@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { HashRouter, NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { HashRouter, NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { api, clearSession, getSession, setSession } from "./lib/api";
 import { dateTimeBR } from "./lib/format";
 import nameWhite from "./assets/forklin-nome-branco.png";
@@ -54,6 +54,25 @@ function SyncButton() {
   );
 }
 
+// Menu: no celular vira abas roláveis; a aba ativa sempre fica visível
+function Nav({ links }: { links: string[][] }) {
+  const ref = useRef<HTMLElement>(null);
+  const loc = useLocation();
+  const [atEnd, setAtEnd] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    el.querySelector<HTMLElement>("a.active")?.scrollIntoView({ inline: "center", block: "nearest" });
+    const check = () => setAtEnd(el.scrollWidth - el.clientWidth - el.scrollLeft < 8);
+    check(); el.addEventListener("scroll", check, { passive: true }); window.addEventListener("resize", check);
+    return () => { el.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
+  }, [loc.pathname]);
+  return (
+    <nav ref={ref} className={`nav${atEnd ? " at-end" : ""}`} aria-label="Seções">
+      {links.map(([to, label]) => <NavLink key={to} to={to} end={to === "/"}>{label}</NavLink>)}
+    </nav>
+  );
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(!!getSession());
   useEffect(() => {
@@ -74,9 +93,7 @@ export default function App() {
             <img className="sym" src={symbol} alt="" />
             <div><img className="name" src={nameWhite} alt="Forklin" /><small>Instagram Analytics</small></div>
           </div>
-          <nav className="nav">
-            {links.map(([to, label]) => <NavLink key={to} to={to} end={to === "/"}>{label}</NavLink>)}
-          </nav>
+          <Nav links={links} />
           <div className="foot">
             <SyncButton />
             <button className="link" onClick={() => window.dispatchEvent(new Event("fia:logout"))}>Sair</button>
