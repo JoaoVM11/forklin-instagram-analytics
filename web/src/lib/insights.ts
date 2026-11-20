@@ -14,17 +14,27 @@ export type AccountStats = {
   formatMix: Record<string, number>; topFormat: string | null;
 };
 
-const inter = (p: PostLite) => (p.like_count ?? 0) + (p.comments_count ?? 0);
+// Muitos perfis escondem curtidas (a API devolve null). Para não distorcer a comparação:
+// se a conta esconde curtidas em mais de 30% dos posts, usamos só comentários para ela;
+// caso contrário, curtidas + comentários, ignorando os posts com curtida oculta.
+export function scorer(posts: PostLite[]): (p: PostLite) => number | null {
+  const hidden = posts.filter((p) => p.like_count == null).length;
+  if (posts.length && hidden / posts.length > 0.3) return (p) => p.comments_count ?? null;
+  return (p) => (p.like_count == null ? null : p.like_count + (p.comments_count ?? 0));
+}
+export const likesHidden = (posts: PostLite[]) => posts.length > 0 && posts.filter((p) => p.like_count == null).length / posts.length > 0.3;
+const nn = (v: (number | null)[]) => v.filter((x): x is number => x != null);
 
 export function accountStats(username: string, followers: number | null, posts: PostLite[]): AccountStats {
   const recent = posts.filter((p) => Date.now() - new Date(p.posted_at).getTime() < 90 * 86400_000);
   const sample = recent.length >= 5 ? recent : posts.slice(0, 20);
   const times = sample.map((p) => new Date(p.posted_at).getTime());
   const spanWeeks = times.length > 1 ? Math.max((Math.max(...times) - Math.min(...times)) / (7 * 86400_000), 1) : 1;
-  const med = median(sample.map(inter));
+  const score = scorer(sample);
+  const med = median(nn(sample.map(score)));
   const mix: Record<string, number> = {};
   for (const p of sample) mix[formatLabel(p)] = (mix[formatLabel(p)] ?? 0) + 1;
-  const byFmt = groupMedian(sample, (p) => formatLabel(p));
+  const byFmt = groupMedian(sample, (p) => formatLabel(p), score);
   const topFormat = Object.entries(byFmt).filter(([, v]) => v.n >= 2).sort((a, b) => b[1].median - a[1].median)[0]?.[0] ?? null;
   return {
     username, followers, posts: sample.length,
@@ -35,9 +45,9 @@ export function accountStats(username: string, followers: number | null, posts: 
   };
 }
 
-function groupMedian(posts: PostLite[], key: (p: PostLite) => string) {
+function groupMedian(posts: PostLite[], key: (p: PostLite) => string, score: (p: PostLite) => number | null) {
   const g: Record<string, number[]> = {};
-  for (const p of posts) (g[key(p)] ??= []).push(inter(p));
+  for (const p of posts) { const v = score(p); if (v != null) (g[key(p)] ??= []).push(v); }
   const out: Record<string, { median: number; n: number }> = {};
   for (const [k, v] of Object.entries(g)) out[k] = { median: median(v) ?? 0, n: v.length };
   return out;
@@ -45,12 +55,14 @@ function groupMedian(posts: PostLite[], key: (p: PostLite) => string) {
 
 // Desempenho relativo: interações do post ÷ mediana da própria conta (normaliza tamanho de perfil)
 export function relativePosts(refs: RefAccount[], media: RefMedia[]) {
-  const medByUser: Record<string, number> = {};
+  const out: (RefMedia & { lift: number })[] = [];
   for (const r of refs) {
-    const v = media.filter((m) => m.username === r.username).map(inter);
-    medByUser[r.username] = median(v) ?? 1;
+    const own = media.filter((m) => m.username === r.username);
+    const score = scorer(own);
+    const med = Math.max(median(nn(own.map(score))) ?? 1, 1);
+    for (const m of own) { const v = score(m); if (v != null) out.push({ ...m, lift: v / med }); }
   }
-  return media.map((m) => ({ ...m, lift: inter(m) / Math.max(medByUser[m.username] || 1, 1) }));
+  return out;
 }
 
 export function formatPerformance(refs: RefAccount[], media: RefMedia[]) {

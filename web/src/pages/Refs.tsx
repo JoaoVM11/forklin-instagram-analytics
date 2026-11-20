@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { api, type RefAccount, type RefMedia } from "../lib/api";
 import { compact, dateBR, dec, fmt, formatLabel, mult, pct } from "../lib/format";
 import { useData } from "../lib/useData";
-import { accountStats, buildInsights, captionSignals, formatPerformance, relativePosts, weekdayPerformance } from "../lib/insights";
+import { accountStats, likesHidden, buildInsights, captionSignals, formatPerformance, relativePosts, weekdayPerformance } from "../lib/insights";
 import { Bars, Card, Loading, PageHead } from "../components/ui";
 
 type RefsData = {
@@ -68,14 +68,14 @@ export default function RefsPage() {
       <div className="section-title">Comparativo</div>
       <div className="card table-wrap">
         <table>
-          <thead><tr><th>Perfil</th><th className="num">Seguidores</th><th className="num">Posts/semana</th><th className="num">Interações (mediana)</th><th className="num">Engaj./seguidor</th><th>Formato mais usado</th><th>Formato que mais rende</th><th /></tr></thead>
+          <thead><tr><th>Perfil</th><th className="num">Seguidores</th><th className="num">Posts/semana</th><th className="num">Interações/post (mediana)</th><th className="num">Engaj./seguidor</th><th>Formato mais usado</th><th>Formato que mais rende</th><th /></tr></thead>
           <tbody>
             {rows.map((r) => {
               const ref = data.refs.find((x) => x.username === r.username);
               const mostUsed = Object.entries(r.formatMix).sort((a, b) => b[1] - a[1])[0]?.[0];
               return (
                 <tr key={r.username} style={r.isOwn ? { background: "#F3F7FD" } : undefined}>
-                  <td><b>@{r.username}</b>{r.isOwn && <span className="tag" style={{ marginLeft: 8 }}>Forklin</span>}{ref?.last_error && <div className="err" style={{ fontSize: 11 }}>{ref.last_error}</div>}</td>
+                  <td><b>@{r.username}</b>{r.isOwn && <span className="tag" style={{ marginLeft: 8 }}>Forklin</span>}{!r.isOwn && likesHidden(data.media.filter((m) => m.username === r.username)) && <div style={{ fontSize: 11, color: "var(--forklin-muted)" }}>Curtidas ocultas · medido por comentários</div>}{ref?.last_error && <div className="err" style={{ fontSize: 11 }}>{ref.last_error}</div>}</td>
                   <td className="num">{compact(r.followers)}</td>
                   <td className="num">{dec(r.postsPerWeek)}</td>
                   <td className="num">{fmt(r.medianInteractions)}</td>
@@ -92,7 +92,7 @@ export default function RefsPage() {
           </tbody>
         </table>
       </div>
-      <p style={{ color: "var(--forklin-muted)", fontSize: 12 }}>Engajamento por seguidor = mediana de (curtidas + comentários) por post ÷ seguidores. Perfis menores costumam ter taxas maiores.</p>
+      <p style={{ color: "var(--forklin-muted)", fontSize: 12 }}>Engajamento por seguidor = mediana de (curtidas + comentários) por post ÷ seguidores. Perfis que escondem curtidas são medidos só por comentários, então a taxa deles aparece menor. Perfis menores costumam ter taxas maiores.</p>
 
       <div className="section-title">Padrões nas referências</div>
       <div className="grid two">
