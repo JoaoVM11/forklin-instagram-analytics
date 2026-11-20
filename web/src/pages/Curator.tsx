@@ -7,7 +7,7 @@ import { Card, PageHead } from "../components/ui";
 
 type Prepared = { kind: "image" | "carousel" | "video"; images: string[]; previews: string[]; thumb: string; file?: File; label: string };
 
-const GOALS = ["Alcance / awareness", "Engajamento (comentários e compartilhamentos)", "Gerar leads / vendas", "Autoridade / educativo"];
+const GOALS = ["Alcance", "Engajamento", "Leads / vendas", "Autoridade / educativo"];
 const CONTEXTS = ["Forklin institucional", "FOR Education", "FOR Sales", "Outro"];
 
 function CopyBtn({ text }: { text: string }) {
