@@ -11,7 +11,7 @@ export type PostLite = {
 export type AccountStats = {
   username: string; followers: number | null; posts: number; postsPerWeek: number;
   medianInteractions: number | null; engagementRate: number | null; // mediana (curtidas+coment.)/seguidores
-  formatMix: Record<string, number>; topFormat: string | null;
+  formatMix: Record<string, number>; topFormat: string | null; likesHidden: boolean;
 };
 
 // Muitos perfis escondem curtidas (a API devolve null). Para não distorcer a comparação:
@@ -41,7 +41,7 @@ export function accountStats(username: string, followers: number | null, posts: 
     postsPerWeek: sample.length / spanWeeks,
     medianInteractions: med,
     engagementRate: followers && med != null ? med / followers : null,
-    formatMix: mix, topFormat,
+    formatMix: mix, topFormat, likesHidden: likesHidden(sample),
   };
 }
 
@@ -146,11 +146,12 @@ export function buildInsights(own: AccountStats | null, refStats: AccountStats[]
     if (refFreq && own.postsPerWeek < refFreq * 0.6)
       out.push({ kind: "bad", title: "Frequência abaixo das referências",
         text: `A Forklin publica ~${dec(own.postsPerWeek)} posts/semana; a mediana das referências é ~${dec(refFreq)}. Constância pesa no alcance.` });
-    const refEng = median(refStats.map((r) => r.engagementRate).filter((x): x is number => x != null));
+    // Só compara com perfis que mostram curtidas (os demais têm taxa artificialmente baixa)
+    const refEng = median(refStats.filter((r) => !r.likesHidden).map((r) => r.engagementRate).filter((x): x is number => x != null));
     if (refEng && own.engagementRate != null)
       out.push(own.engagementRate >= refEng
-        ? { kind: "ok", title: "Engajamento por seguidor acima das referências", text: `Taxa da Forklin: ${dec(own.engagementRate * 100)}% vs ${dec(refEng * 100)}% de mediana. Base pequena e engajada é um bom ponto de partida para escalar alcance.` }
-        : { kind: "bad", title: "Engajamento por seguidor abaixo das referências", text: `Taxa da Forklin: ${dec(own.engagementRate * 100)}% vs ${dec(refEng * 100)}% de mediana.` });
+        ? { kind: "ok", title: "Engajamento por seguidor acima das referências", text: `Taxa da Forklin: ${dec(own.engagementRate * 100, 2)}% vs ${dec(refEng * 100, 2)}% de mediana (perfis que mostram curtidas). Base pequena e engajada é um bom ponto de partida para escalar alcance.` }
+        : { kind: "bad", title: "Engajamento por seguidor abaixo das referências", text: `Taxa da Forklin: ${dec(own.engagementRate * 100, 2)}% vs ${dec(refEng * 100, 2)}% de mediana (perfis que mostram curtidas).` });
   }
   out.push({ kind: "tip", title: "Como ler estes números",
     text: "A Meta só libera curtidas e comentários de perfis de terceiros (não alcance, salvos ou compartilhamentos). Por isso a comparação usa o desempenho de cada post relativo ao típico da própria conta, o que evita que perfis grandes dominem a análise." });
