@@ -97,7 +97,7 @@ export default function RefsPage() {
       <div className="section-title">Padrões nas referências</div>
       <div className="grid two">
         <Card title="Desempenho por formato" sub="1,0× = post típico da própria conta">
-          <Bars rows={analysis.formats.map((f) => ({ label: `${f.fmt} (${f.n})`, value: f.lift }))} valueFmt={(n) => mult(n)} />
+          <Bars rows={analysis.formats.filter((f) => f.n >= 3).map((f) => ({ label: `${f.fmt} (${f.n})`, value: f.lift }))} valueFmt={(n) => mult(n)} />
         </Card>
         <Card title="Desempenho por dia da semana" sub="1,0× = post típico da própria conta">
           <Bars rows={analysis.weekdays.filter((d) => d.n).map((d) => ({ label: `${d.day} (${d.n})`, value: d.lift }))} valueFmt={(n) => mult(n)} />
