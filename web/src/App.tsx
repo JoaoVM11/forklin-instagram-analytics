@@ -9,6 +9,7 @@ import PostsPage from "./pages/Posts";
 import StoriesPage from "./pages/Stories";
 import RefsPage from "./pages/Refs";
 import TokenPage from "./pages/Token";
+import CuratorPage from "./pages/Curator";
 
 function Login({ onDone }: { onDone: () => void }) {
   const [pw, setPw] = useState("");
@@ -63,7 +64,7 @@ export default function App() {
   if (!authed) return <Login onDone={() => setAuthed(true)} />;
 
   const links = [
-    ["/", "Visão geral"], ["/posts", "Posts"], ["/stories", "Stories"], ["/referencias", "Referências"], ["/token", "Token de acesso"],
+    ["/", "Visão geral"], ["/posts", "Posts"], ["/stories", "Stories"], ["/referencias", "Referências"], ["/curador", "Curador"], ["/token", "Token e chaves"],
   ];
   return (
     <HashRouter>
@@ -87,6 +88,7 @@ export default function App() {
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/stories" element={<StoriesPage />} />
             <Route path="/referencias" element={<RefsPage />} />
+            <Route path="/curador" element={<CuratorPage />} />
             <Route path="/token" element={<TokenPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

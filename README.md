@@ -10,7 +10,8 @@ Painel de métricas do orgânico do **@forklinbr**: alcance e awareness da marca
 | **Posts** | Por publicação: alcance, views, curtidas, comentários, compartilhamentos, salvos, reposts, visitas ao perfil, seguidores gerados e engajamento/alcance. Filtro por formato e alcance médio por formato. |
 | **Stories** | Alcance, views, respostas, compartilhamentos, interações, navegação (avançou, voltou, saiu, pulou) e visitas ao perfil por story. |
 | **Referências** | Comparativo com perfis do segmento (seguidores, frequência, interações, engajamento por seguidor, formatos) e insights automáticos: formato, dia, horário e traços de legenda que mais rendem. |
-| **Token de acesso** | Validade do token da Meta, troca do token e da senha do app (protegidas por senha). |
+| **Curador** | Recebe imagem, carrossel ou vídeo, avalia a peça (gancho, texto na arte, identidade visual) e sugere 3 copies, CTA, hashtags e melhor horário, usando como base os posts de mais sucesso da Forklin e das referências. Vídeos: quadros e áudio são extraídos no navegador; a fala é transcrita com Whisper. |
+| **Token e chaves** | Validade do token da Meta, troca do token, chave do Groq (Curador) e senha do app (protegidas por senha). |
 
 ## Arquitetura
 
@@ -23,6 +24,7 @@ supabase/
     fia-api     Leitura dos dados para o painel e cadastro de perfis de referência
     fia-token   Status do token da Meta, troca de token e troca de senha
     fia-sync    Coleta na Graph API do Instagram (v23) e grava no banco
+    fia-curator Curador de posts via Groq (visão + Whisper) e histórico de análises
 ```
 
 - **Banco:** Supabase (projeto `goxwnxfgusvxvqyijcyo`). Todas as tabelas têm prefixo `fia_`, RLS ligado e nenhuma permissão para `anon`/`authenticated`. Só as Edge Functions (service role) leem e escrevem.
@@ -36,6 +38,12 @@ supabase/
 - Curtidas em stories não são expostas pela API; o painel usa respostas e interações totais.
 - De perfis de terceiros só vêm curtidas e comentários (sem alcance, salvos ou compartilhamentos). A análise de referências usa o desempenho de cada post **relativo à mediana da própria conta**, para não favorecer perfis grandes.
 - Demografia exige 100+ seguidores.
+
+## Curador (Groq)
+
+- Modelo de visão padrão: `qwen/qwen3.8-27b` (configurável na página Token e chaves). Até 3 imagens por análise: vídeos viram "quadro de abertura + grade de quadros"; carrosséis com mais de 3 slides viram grade.
+- Transcrição: `whisper-large-v3-turbo`, com áudio convertido para WAV 16 kHz mono no navegador.
+- A chave do Groq fica em `fia_app_config` (`groq_api_key`) e nunca é enviada ao navegador.
 
 ## Rodar localmente
 

@@ -1,7 +1,17 @@
 // GET  (sessão view)  -> status do token da Meta (validade, dias restantes, permissões)
 // POST (sessão admin) { action: "set_token", token }            -> valida e grava um token novo
 // POST (sessão admin) { action: "change_password", new_password } -> troca a senha do app
+// POST (sessão admin) { action: "set_groq", key?, model? }     -> valida e grava a chave do Groq (curador)
 import { admin, cors, debugToken, getConfig, graph, hashPassword, json, readSession, setConfig } from "../_shared/core.ts";
+
+const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b";
+const mask = (k: string) => `${k.slice(0, 4)}…${k.slice(-4)}`;
+
+async function groqStatus(db: ReturnType<typeof admin>) {
+  const key = await getConfig(db, "groq_api_key");
+  const model = (await getConfig(db, "groq_vision_model")) ?? DEFAULT_GROQ_MODEL;
+  return key ? { configured: true, masked: mask(key), model } : { configured: false, model };
+}
 
 const REQUIRED = ["instagram_basic", "instagram_manage_insights", "pages_show_list", "pages_read_engagement"];
 
@@ -14,7 +24,8 @@ Deno.serve(async (req) => {
   if (req.method === "GET") {
     const token = await getConfig(db, "meta_token");
     const updated = await db.from("fia_app_config").select("updated_at").eq("key", "meta_token").maybeSingle();
-    if (!token) return json({ configured: false });
+    const groq = await groqStatus(db);
+    if (!token) return json({ configured: false, groq });
     try {
       const d = await debugToken(token);
       const days = d.expires_at ? Math.floor((d.expires_at * 1000 - Date.now()) / 86_400_000) : null;
@@ -28,9 +39,10 @@ Deno.serve(async (req) => {
         missing_scopes: REQUIRED.filter((s) => !d.scopes?.includes(s)),
         updated_at: updated.data?.updated_at,
         masked: `${token.slice(0, 6)}…${token.slice(-4)}`,
+        groq,
       });
     } catch (e) {
-      return json({ configured: true, valid: false, error: (e as Error).message, updated_at: updated.data?.updated_at });
+      return json({ configured: true, valid: false, error: (e as Error).message, updated_at: updated.data?.updated_at, groq });
     }
   }
 
@@ -74,6 +86,26 @@ Deno.serve(async (req) => {
     // Invalida sessões antigas trocando o segredo de sessão
     await setConfig(db, "session_secret", btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))));
     return json({ ok: true });
+  }
+
+  if (body.action === "set_groq") {
+    const key = String(body.key || "").trim();
+    const model = String(body.model || "").trim();
+    if (key) {
+      if (!/^gsk_[A-Za-z0-9]{20,}$/.test(key)) return json({ error: "A chave do Groq começa com gsk_ e tem pelo menos 24 caracteres." }, 400);
+      const r = await fetch("https://api.groq.com/openai/v1/models", { headers: { Authorization: `Bearer ${key}` } });
+      if (!r.ok) return json({ error: `O Groq recusou a chave (HTTP ${r.status}).` }, 400);
+      const models = (await r.json()).data?.map((m: { id: string }) => m.id) ?? [];
+      const wanted = model || (await getConfig(db, "groq_vision_model")) || DEFAULT_GROQ_MODEL;
+      await setConfig(db, "groq_api_key", key);
+      if (model) await setConfig(db, "groq_vision_model", model);
+      return json({ ok: true, groq: await groqStatus(db), model_available: models.includes(wanted), models: models.filter((m: string) => !m.includes("whisper")).slice(0, 40) });
+    }
+    if (model) {
+      await setConfig(db, "groq_vision_model", model);
+      return json({ ok: true, groq: await groqStatus(db) });
+    }
+    return json({ error: "Informe a chave ou o modelo." }, 400);
   }
 
   return json({ error: "Ação desconhecida." }, 400);

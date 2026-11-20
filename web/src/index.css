@@ -145,6 +145,11 @@ tr:hover td { background: #F3F6FA; }
 .status-pill.warning { background: #FDF3E1; color: var(--warning); }
 .status-pill.critical { background: #FDECEA; color: var(--critical); }
 
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--forklin-line); border-top-color: var(--forklin-blue-bright); animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+label > .field { margin-top: 4px; }
+
 /* ---------- Mobile ---------- */
 @media (max-width: 900px) {
   body { font-size: 13px; }

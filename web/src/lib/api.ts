@@ -46,14 +46,32 @@ export const api = {
   tokenStatus: () => call<TokenStatus>("fia-token"),
   setToken: (adminSession: string, token: string) =>
     call<{ ok: boolean; username: string; expires_at: string }>("fia-token", { body: { action: "set_token", token }, session: adminSession }),
+  setGroq: (adminSession: string, key: string, model: string) =>
+    call<{ ok: boolean; groq: GroqStatus; model_available?: boolean; models?: string[] }>("fia-token", { body: { action: "set_groq", key, model }, session: adminSession }),
+  transcribe: (audio_base64: string) => call<{ text: string }>("fia-curator", { body: { action: "transcribe", audio_base64 } }),
+  analyze: (payload: { kind: string; images: string[]; draft?: string; context?: string; goal?: string; transcript?: string; thumb?: string }) =>
+    call<{ id: number; created_at: string; model: string; result: CuratorResult }>("fia-curator", { body: { action: "analyze", ...payload } }),
+  curatorHistory: () => call<{ runs: CuratorRun[] }>("fia-curator", { query: "history=1" }),
   changePassword: (adminSession: string, new_password: string) =>
     call<{ ok: boolean }>("fia-token", { body: { action: "change_password", new_password }, session: adminSession }),
 };
 
+export type GroqStatus = { configured: boolean; masked?: string; model: string };
+export type CuratorResult = {
+  resumo: string; nota: number; pontos_fortes: string[]; melhorias: string[];
+  gancho: { avaliacao: string; sugestao: string }; texto_na_arte: { avaliacao: string; sugestao: string };
+  identidade_visual: string; formato_recomendado: string;
+  copies: { tipo: string; texto: string; por_que: string }[]; cta: string; hashtags: string[];
+  melhor_horario: { dia: string; faixa: string; justificativa: string }; referencias_usadas: string[];
+};
+export type CuratorRun = {
+  id: number; created_at: string; kind: string; draft: string | null; context: string | null; goal: string | null;
+  transcript: string | null; thumb: string | null; model: string | null; result: CuratorResult | null; error: string | null;
+};
 export type TokenStatus = {
   configured: boolean; valid?: boolean; expires_at?: string | null; days_left?: number | null;
   data_access_expires_at?: string | null; scopes?: string[]; missing_scopes?: string[];
-  updated_at?: string; masked?: string; error?: string;
+  updated_at?: string; masked?: string; error?: string; groq?: GroqStatus;
 };
 
 export type Media = {

@@ -17,6 +17,9 @@ export default function TokenPage() {
   const [token, setToken] = useState("");
   const [newPw, setNewPw] = useState(""); const [newPw2, setNewPw2] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [groqKey, setGroqKey] = useState("");
+  const [groqModel, setGroqModel] = useState("");
+  const [groqMsg, setGroqMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function unlock() {
@@ -50,11 +53,23 @@ export default function TokenPage() {
     } catch (e) { setMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
   }
 
+  async function saveGroq() {
+    if (!adminSession) return;
+    setBusy(true); setGroqMsg(null);
+    try {
+      const r = await api.setGroq(adminSession, groqKey, groqModel);
+      setGroqKey("");
+      const warn = r.model_available === false ? ` Atenção: o modelo ${r.groq.model} não aparece na sua conta do Groq; ajuste o campo "Modelo de visão".` : "";
+      setGroqMsg({ ok: r.model_available !== false, text: `Chave salva (${r.groq.masked ?? "—"}). Modelo: ${r.groq.model}.${warn}` });
+      reload();
+    } catch (e) { setGroqMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
+  }
+
   const st = data ? statusOf(data) : null;
 
   return (
     <>
-      <PageHead title="Token de acesso" subtitle="Credencial da Meta usada para coletar os dados do Instagram. Renove a cada ~60 dias." />
+      <PageHead title="Token e chaves" subtitle="Credenciais do sistema: token da Meta (renove a cada ~60 dias) e chave do Groq usada pelo Curador." />
       {!data ? <Loading error={error} /> : (
         <div className="grid two">
           <Card title="Situação atual">
@@ -99,6 +114,33 @@ export default function TokenPage() {
             {msg && <div className={msg.ok ? "ok-msg" : "err"}>{msg.text}</div>}
           </Card>
         </div>
+      )}
+
+      {data && (
+        <>
+          <div className="section-title">Chave do Groq (Curador de posts)</div>
+          <div className="card">
+            <div className={`status-pill ${data.groq?.configured ? "good" : "warning"}`} role="status">
+              {data.groq?.configured ? `✓ Configurada · ${data.groq.masked}` : "! Não configurada"}
+            </div>
+            <p style={{ fontSize: 13, color: "var(--forklin-muted)", margin: "10px 0 14px" }}>
+              Usada pelo Curador para analisar imagens e vídeos e sugerir copies. Modelo de visão atual: <code>{data.groq?.model}</code>.
+              A chave fica guardada no banco, nunca aparece inteira de novo e não vai para o navegador.
+            </p>
+            {!adminSession ? (
+              <p style={{ fontSize: 13 }}>Desbloqueie a área protegida acima (senha do app) para cadastrar ou trocar a chave.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 8, maxWidth: 520 }}>
+                <label htmlFor="gk" style={{ fontSize: 12, color: "var(--forklin-muted)" }}>Chave da API do Groq (começa com gsk_)</label>
+                <input id="gk" className="field" type="password" autoComplete="off" spellCheck={false} placeholder="gsk_…" value={groqKey} onChange={(e) => setGroqKey(e.target.value)} />
+                <label htmlFor="gm" style={{ fontSize: 12, color: "var(--forklin-muted)" }}>Modelo de visão (opcional)</label>
+                <input id="gm" className="field" placeholder={data.groq?.model} value={groqModel} onChange={(e) => setGroqModel(e.target.value)} />
+                <div><button className="btn" disabled={busy || (!groqKey && !groqModel)} onClick={saveGroq}>{busy ? "Validando com o Groq…" : "Validar e salvar"}</button></div>
+              </div>
+            )}
+            {groqMsg && <div className={groqMsg.ok ? "ok-msg" : "err"}>{groqMsg.text}</div>}
+          </div>
+        </>
       )}
 
       <div className="section-title">Como gerar um token novo</div>

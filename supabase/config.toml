@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.fia-sync]
 verify_jwt = false
+
+[functions.fia-curator]
+verify_jwt = false
