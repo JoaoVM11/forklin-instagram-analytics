@@ -90,9 +90,9 @@ input.field:focus, textarea.field:focus { outline: 2px solid var(--forklin-blue-
 
 /* Cards */
 .grid { display: grid; gap: 16px; }
-.kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.kpis { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 .two { grid-template-columns: 1fr 1fr; }
-@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } .shell { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; } }
+@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
 .card { background: #fff; border: 1px solid var(--forklin-line); border-radius: var(--radius); padding: 18px 20px; }
 .card h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
 .card .sub { color: var(--forklin-muted); font-size: 12px; margin-bottom: 12px; }
@@ -144,3 +144,43 @@ tr:hover td { background: #F3F6FA; }
 .status-pill.good { background: #E7F5EE; color: var(--good); }
 .status-pill.warning { background: #FDF3E1; color: var(--warning); }
 .status-pill.critical { background: #FDECEA; color: var(--critical); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 900px) {
+  body { font-size: 13px; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar {
+    position: sticky; top: 0; z-index: 10; height: auto;
+    padding: 10px 12px 0; gap: 0;
+    display: grid; grid-template-columns: 1fr auto; grid-template-areas: "brand foot" "nav nav"; align-items: center;
+  }
+  .brand { grid-area: brand; padding: 0; gap: 8px; }
+  .brand img.sym { width: 26px; height: 26px; }
+  .brand img.name { height: 16px; }
+  .brand small { font-size: 10px; margin-top: 2px; }
+  .sidebar .foot { grid-area: foot; margin: 0; padding: 0; display: flex; align-items: center; gap: 10px; }
+  .sidebar .foot > div { margin: 0 !important; }
+  .sidebar .foot > div > div { display: none; }        /* esconde "Última coleta" no mobile */
+  .sidebar .foot .sync { width: auto; padding: 6px 10px; font-size: 12px; }
+  .nav { grid-area: nav; display: flex; gap: 4px; overflow-x: auto; margin: 10px -12px 0; padding: 0 12px 10px; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a { white-space: nowrap; padding: 7px 12px; font-size: 13px; }
+  .main { padding: 18px 14px 48px; }
+  .page-head { margin-bottom: 14px; }
+  .page-head h1 { font-size: 20px; }
+  .filters { width: 100%; }
+  .filters .field { flex: 1; width: auto !important; }
+  .seg { overflow-x: auto; max-width: 100%; }
+  .seg button { padding: 7px 10px; white-space: nowrap; }
+  .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid { gap: 12px; }
+  .card { padding: 14px; }
+  .kpi .value { font-size: 22px; }
+  .kpi .delta { font-size: 11px; }
+  .section-title { margin: 22px 0 10px; }
+  .bar-row { grid-template-columns: 112px 1fr 44px; font-size: 12px; }
+  .bar-row .cap { max-width: 112px !important; }
+  .cap { max-width: 180px; }
+  th, td { padding: 8px 6px; }
+  .insight { gap: 10px; }
+}
